@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AI連動 SESスキルマッチツール</title>
+
+<!-- Excel解析用 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- PDF解析用 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<style>
+  body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f4f6f9; }
+  h2 { margin-bottom: 10px; }
+  .step {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .step h3 {
+    margin-top: 0;
+    border-left: 6px solid #4a90e2;
+    padding-left: 10px;
+  }
+  textarea, input[type="text"], input[type="file"], select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+  button {
+    background: #4a90e2;
+    color: #fff;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  button:hover { background: #357ABD; }
+
+  .result-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+
+  .mail-box {
+    white-space: pre-wrap;
+    background: #fdfdfd;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+  }
+  .ok { background: #d4f4d4; }
+  .maybe { background: #fff4c2; }
+  .ng { background: #f4d4d4; }
+
+  .match-high { color: #2e8b57; font-weight: bold; }
+  .match-mid { color: #c7a400; font-weight: bold; }
+  .match-low { color: #b22222; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h2>AI連動 SESスキルマッチツール</h2>
+
+<!-- STEP 1 -->
+<div class="step">
+  <h3>STEP 1：スキルシートアップロード（Excel / PDF）</h3>
+  <input type="file" id="skillFile">
+  <p style="color:#777;">AIがスキルを自動抽出します。</p>
+
+  <div id="skillList" class="result-card" style="display:none;">
+    <h4>抽出されたスキル一覧（AI解析）</h4>
+    <div id="skillItems"></div>
+  </div>
+</div>
+
+<!-- STEP 2 -->
+<div class="step">
+  <h3>STEP 2：案件票を貼り付け</h3>
+  <textarea id="projectText" placeholder="案件票をここに貼り付け"></textarea>
+  <button onclick="analyzeProject()">案件をAI解析する</button>
+
+  <div id="projectSkillsBox" class="result-card" style="display:none;">
+    <h4>案件スキル（AI解析）</h4>
+    <div id="projectSkills"></div>
+  </div>
+</div>
+
+<!-- STEP 3 -->
+<div class="step">
+  <h3>STEP 3：マッチ度をAIで計算</h3>
+  <button onclick="calcMatch()">AIでマッチ度計算</button>
+
+  <div id="matchResult" class="result-card" style="display:none;"></div>
+  <div id="skillTable"></div>
+</div>
+
+<!-- STEP 4 -->
+<div class="step">
+  <h3>STEP 4：メールテンプレを選択してAI生成</h3>
+
+  <label>テンプレ種類：</label>
+  <select id="templateType">
+    <option value="strong">強め提案</option>
+    <option value="normal">標準提案</option>
+    <option value="soft">控えめ提案</option>
+    <option value="casual">カジュアル</option>
+    <option value="polite">長文丁寧</option>
+  </select>
+
+  <button onclick="generateMail()">
